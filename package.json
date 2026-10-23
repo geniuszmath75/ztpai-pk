@@ -1,0 +1,15 @@
+{
+  "name": "lab02",
+  "version": "1.0.0",
+  "description": "Room Booking API - architektura i reguły biznesowe",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "keywords": [],
+  "type": "module",
+  "dependencies": {
+    "express": "^5.2.1",
+    "zod": "^4.6.7"
+  }
+}

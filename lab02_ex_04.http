@@ -1,0 +1,119 @@
+@baseUrl = http://localhost:3000
+@contentType = application/json
+
+### ============================================================
+### Zadanie 4 — brak nakładających się rezerwacji
+### Przed uruchomieniem: npm start (czysta pamięć / restart serwera)
+### Bazowa rezerwacja: sala 1, 2026-11-10 10:00–12:00 UTC
+### ============================================================
+
+### 0) Baza — CONFIRMED 10:00–12:00 (sala 1) → 201
+POST {{baseUrl}}/api/reservations
+Content-Type: {{contentType}}
+
+{
+  "roomId": 1,
+  "reservedBy": "Jan Kowalski",
+  "participants": 20,
+  "startTime": "2026-11-10T10:00:00.000Z",
+  "endTime": "2026-11-10T12:00:00.000Z"
+}
+
+### 1) Stykanie na końcu 12:00–13:00 → 201 OK
+POST {{baseUrl}}/api/reservations
+Content-Type: {{contentType}}
+
+{
+  "roomId": 1,
+  "reservedBy": "Ala Nowak",
+  "participants": 5,
+  "startTime": "2026-11-10T12:00:00.000Z",
+  "endTime": "2026-11-10T13:00:00.000Z"
+}
+
+### 2) Stykanie na początku 08:00–10:00 → 201 OK
+POST {{baseUrl}}/api/reservations
+Content-Type: {{contentType}}
+
+{
+  "roomId": 1,
+  "reservedBy": "Ala Nowak",
+  "participants": 5,
+  "startTime": "2026-11-10T08:00:00.000Z",
+  "endTime": "2026-11-10T10:00:00.000Z"
+}
+
+### 3) Overlap 11:00–13:00 → 409 ROOM_ALREADY_BOOKED
+POST {{baseUrl}}/api/reservations
+Content-Type: {{contentType}}
+
+{
+  "roomId": 1,
+  "reservedBy": "Ala Nowak",
+  "participants": 5,
+  "startTime": "2026-11-10T11:00:00.000Z",
+  "endTime": "2026-11-10T13:00:00.000Z"
+}
+
+### 4) Zawiera istniejącą 09:00–13:00 → 409 ROOM_ALREADY_BOOKED
+POST {{baseUrl}}/api/reservations
+Content-Type: {{contentType}}
+
+{
+  "roomId": 1,
+  "reservedBy": "Ala Nowak",
+  "participants": 5,
+  "startTime": "2026-11-10T09:00:00.000Z",
+  "endTime": "2026-11-10T13:00:00.000Z"
+}
+
+### 5) Zawiera się w istniejącej 10:30–11:00 → 409 ROOM_ALREADY_BOOKED
+POST {{baseUrl}}/api/reservations
+Content-Type: {{contentType}}
+
+{
+  "roomId": 1,
+  "reservedBy": "Ala Nowak",
+  "participants": 5,
+  "startTime": "2026-11-10T10:30:00.000Z",
+  "endTime": "2026-11-10T11:00:00.000Z"
+}
+
+### 6) Ta sama godzina, inna sala → 201 OK
+# @name createToCancel
+POST {{baseUrl}}/api/reservations
+Content-Type: {{contentType}}
+{
+  "roomId": 2,
+  "reservedBy": "Ala Nowak",
+  "participants": 5,
+  "startTime": "2026-11-10T10:00:00.000Z",
+  "endTime": "2026-11-10T12:00:00.000Z"
+}
+
+### 7a) Anulowane nie blokują — utwórz na sali 3 → 201
+POST {{baseUrl}}/api/reservations
+Content-Type: {{contentType}}
+
+{
+  "roomId": 3,
+  "reservedBy": "Temp User",
+  "participants": 5,
+  "startTime": "2026-12-01T10:00:00.000Z",
+  "endTime": "2026-12-01T12:00:00.000Z"
+}
+
+### 7a) Anuluj rezerwację z 7a → 200 CANCELLED
+PATCH {{baseUrl}}/api/reservations/5/cancel
+
+### 7b) Ta sama sala/godzina po CANCELLED → 201 OK
+POST {{baseUrl}}/api/reservations
+Content-Type: {{contentType}}
+
+{
+  "roomId": 2,
+  "reservedBy": "New User",
+  "participants": 5,
+  "startTime": "2026-12-01T10:00:00.000Z",
+  "endTime": "2026-12-01T12:00:00.000Z"
+}
