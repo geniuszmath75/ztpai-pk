@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:17
+    container_name: room-booking-db
+    environment:
+      POSTGRES_USER: roomuser
+      POSTGRES_PASSWORD: roompass
+      POSTGRES_DB: room_booking
+    ports:
+      - "5432:5432"
+    volumes:
+      - room_booking_pgdata:/var/lib/postgresql/data
+
+volumes:
+  room_booking_pgdata:
