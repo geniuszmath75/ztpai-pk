@@ -17,6 +17,17 @@ function errorHandler(err, req, res, _next) {
         });
     }
 
+    // PostgreSQL unique_violation — bez wycieku szczegółów bazy
+    if (err.code === '23505') {
+        return res.status(409).json({
+            error: {
+                code: 'CONFLICT',
+                message: 'Resource already exists',
+                requestId
+            }
+        });
+    }
+
     if (err instanceof AppError) {
         return res.status(err.statusCode).json({
             error: {

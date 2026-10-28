@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/server.js",
     "migrate:latest": "knex migrate:latest",
-    "migrate:rollback": "knex migrate:rollback"
+    "migrate:rollback": "knex migrate:rollback",
+    "seed:run": "knex seed:run"
   },
   "keywords": [],
   "type": "module",

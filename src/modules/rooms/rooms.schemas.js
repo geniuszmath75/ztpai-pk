@@ -12,4 +12,12 @@ const roomIdParamsSchema = z
     })
     .strict();
 
-export { roomIdParamsSchema, positiveIntParam };
+const createRoomBodySchema = z
+    .object({
+        buildingId: z.number().int().positive(),
+        name: z.string().trim().min(1).max(100),
+        capacity: z.number().int().positive()
+    })
+    .strict();
+
+export { roomIdParamsSchema, createRoomBodySchema, positiveIntParam };

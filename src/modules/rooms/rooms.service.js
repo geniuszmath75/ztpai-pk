@@ -1,6 +1,6 @@
 import { NotFoundError } from '../../errors/AppError.js';
 
-function createRoomsService({ roomsRepository }) {
+function createRoomsService({ roomsRepository, buildingsRepository }) {
     return {
         async list() {
             return roomsRepository.findAll();
@@ -12,6 +12,14 @@ function createRoomsService({ roomsRepository }) {
                 throw new NotFoundError('Room not found');
             }
             return room;
+        },
+
+        async create({ buildingId, name, capacity }) {
+            const building = await buildingsRepository.findById(buildingId);
+            if (!building) {
+                throw new NotFoundError('Building not found');
+            }
+            return roomsRepository.create({ buildingId, name, capacity });
         }
     };
 }

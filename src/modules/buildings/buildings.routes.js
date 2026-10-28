@@ -1,0 +1,15 @@
+import { Router } from 'express';
+import { validate } from '../../middleware/validate.js';
+import { buildingIdParamsSchema, createBuildingBodySchema } from './buildings.schemas.js';
+
+function createBuildingsRouter({ buildingsController }) {
+    const router = Router();
+
+    router.get('/', buildingsController.list);
+    router.get('/:id', validate({ params: buildingIdParamsSchema }), buildingsController.getById);
+    router.post('/', validate({ body: createBuildingBodySchema }), buildingsController.create);
+
+    return router;
+}
+
+export { createBuildingsRouter };

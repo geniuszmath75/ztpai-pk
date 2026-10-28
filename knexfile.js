@@ -7,6 +7,9 @@ const config = {
     migrations: {
         directory: './migrations',
         tableName: 'knex_migrations'
+    },
+    seeds: {
+        directory: './seeds'
     }
 };
 
