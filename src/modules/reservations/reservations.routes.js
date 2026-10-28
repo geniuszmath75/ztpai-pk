@@ -15,6 +15,12 @@ function createReservationsRouter({ reservationsController }) {
         reservationsController.list
     );
 
+    router.get(
+        '/:id',
+        validate({ params: reservationIdParamsSchema }),
+        reservationsController.getById
+    );
+
     router.post(
         '/',
         validate({ body: createReservationBodySchema }),

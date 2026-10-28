@@ -7,4 +7,13 @@ function toRoomResponse(room) {
     };
 }
 
-export { toRoomResponse };
+function toRoomWithBuildingResponse(room) {
+    return {
+        id: room.id,
+        name: room.name,
+        capacity: room.capacity,
+        building: room.building
+    };
+}
+
+export { toRoomResponse, toRoomWithBuildingResponse };

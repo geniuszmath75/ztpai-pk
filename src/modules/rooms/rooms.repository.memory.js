@@ -1,3 +1,8 @@
+const buildingsById = {
+    1: { id: 1, name: 'Budynek A' },
+    2: { id: 2, name: 'Budynek B' }
+};
+
 function createRoomsRepository() {
     const rooms = [
         { id: 1, buildingId: 1, name: 'A101', capacity: 30, createdAt: '2026-01-01T00:00:00.000Z' },
@@ -14,6 +19,24 @@ function createRoomsRepository() {
 
         async findById(id) {
             return rooms.find((room) => room.id === id) ?? null;
+        },
+
+        async findByIdWithBuilding(id) {
+            const room = rooms.find((r) => r.id === id);
+            if (!room) {
+                return null;
+            }
+            const building = buildingsById[room.buildingId];
+            return {
+                id: room.id,
+                name: room.name,
+                capacity: room.capacity,
+                building: building ? { id: building.id, name: building.name } : null
+            };
+        },
+
+        async findByBuildingId(buildingId) {
+            return rooms.filter((r) => r.buildingId === buildingId);
         },
 
         async create({ buildingId, name, capacity }) {

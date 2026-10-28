@@ -19,4 +19,18 @@ function toReservationResponse(reservation) {
     };
 }
 
-export { toReservationResponse };
+function toReservationDetailsResponse(reservation) {
+    return {
+        id: reservation.id,
+        room: reservation.room,
+        reservedBy: reservation.reservedBy,
+        participants: reservation.participants,
+        startTime: toUtcIso(reservation.startTime),
+        endTime: toUtcIso(reservation.endTime),
+        status: reservation.status,
+        createdAt: toUtcIso(reservation.createdAt),
+        cancelledAt: toUtcIso(reservation.cancelledAt)
+    };
+}
+
+export { toReservationResponse, toReservationDetailsResponse };

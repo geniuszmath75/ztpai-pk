@@ -8,6 +8,18 @@ function mapRoom(row) {
     };
 }
 
+function mapRoomWithBuilding(row) {
+    return {
+        id: row.id,
+        name: row.name,
+        capacity: row.capacity,
+        building: {
+            id: row.b_id,
+            name: row.b_name
+        }
+    };
+}
+
 function createRoomsRepository(knex) {
     return {
         async findAll() {
@@ -18,6 +30,30 @@ function createRoomsRepository(knex) {
         async findById(id) {
             const row = await knex('rooms').where({ id }).first();
             return row ? mapRoom(row) : null;
+        },
+
+        // 1 JOIN — stała liczba zapytań
+        async findByIdWithBuilding(id) {
+            const row = await knex('rooms')
+                .join('buildings', 'rooms.building_id', 'buildings.id')
+                .where('rooms.id', id)
+                .select(
+                    'rooms.id',
+                    'rooms.name',
+                    'rooms.capacity',
+                    'buildings.id as b_id',
+                    'buildings.name as b_name'
+                )
+                .first();
+            return row ? mapRoomWithBuilding(row) : null;
+        },
+
+        async findByBuildingId(buildingId) {
+            const rows = await knex('rooms')
+                .where({ building_id: buildingId })
+                .select('*')
+                .orderBy('id');
+            return rows.map(mapRoom);
         },
 
         async create({ buildingId, name, capacity }) {

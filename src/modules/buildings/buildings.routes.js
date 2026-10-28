@@ -6,6 +6,11 @@ function createBuildingsRouter({ buildingsController }) {
     const router = Router();
 
     router.get('/', buildingsController.list);
+    router.get(
+        '/:id/rooms',
+        validate({ params: buildingIdParamsSchema }),
+        buildingsController.listRooms
+    );
     router.get('/:id', validate({ params: buildingIdParamsSchema }), buildingsController.getById);
     router.post('/', validate({ body: createBuildingBodySchema }), buildingsController.create);
 

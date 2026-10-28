@@ -3,14 +3,23 @@ function mapBuilding(row) {
         id: row.id,
         name: row.name,
         address: row.address,
-        createdAt: new Date(row.created_at).toISOString()
+        createdAt: new Date(row.created_at).toISOString(),
+        ...(row.rooms_count !== undefined
+            ? { roomsCount: Number(row.rooms_count) }
+            : {})
     };
 }
 
 function createBuildingsRepository(knex) {
     return {
+        // LEFT JOIN + GROUP BY — budynki bez sal mają roomsCount: 0
         async findAll() {
-            const rows = await knex('buildings').select('*').orderBy('id');
+            const rows = await knex('buildings')
+                .leftJoin('rooms', 'buildings.id', 'rooms.building_id')
+                .select('buildings.id', 'buildings.name', 'buildings.address', 'buildings.created_at')
+                .count('rooms.id as rooms_count')
+                .groupBy('buildings.id', 'buildings.name', 'buildings.address', 'buildings.created_at')
+                .orderBy('buildings.id');
             return rows.map(mapBuilding);
         },
 

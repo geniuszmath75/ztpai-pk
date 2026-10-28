@@ -23,11 +23,15 @@ function createReservationsService({
     now = () => new Date()
 }) {
     async function list(roomId) {
-        const all = await reservationsRepository.findAll();
-        if (roomId === undefined) {
-            return all;
+        return reservationsRepository.findAllWithDetails(roomId);
+    }
+
+    async function getById(id) {
+        const reservation = await reservationsRepository.findByIdWithDetails(id);
+        if (!reservation) {
+            throw new NotFoundError('Reservation not found');
         }
-        return all.filter((reservation) => reservation.roomId === roomId);
+        return reservation;
     }
 
     async function create(payload) {
@@ -130,7 +134,7 @@ function createReservationsService({
         return reservationsRepository.save(reservation);
     }
 
-    return { list, create, cancel };
+    return { list, getById, create, cancel };
 }
 
 export { createReservationsService };

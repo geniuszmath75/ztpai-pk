@@ -3,11 +3,16 @@ function createBuildingsRepository() {
         { id: 1, name: 'Budynek A', address: 'ul. Warszawska 24, Kraków', createdAt: '2026-01-01T00:00:00.000Z' },
         { id: 2, name: 'Budynek B', address: 'ul. Warszawska 26, Kraków', createdAt: '2026-01-01T00:00:00.000Z' }
     ];
+    // zsynchronizowane z rooms.repository.memory (seed)
+    const roomCounts = { 1: 3, 2: 1 };
     let nextId = 3;
 
     return {
         async findAll() {
-            return buildings;
+            return buildings.map((b) => ({
+                ...b,
+                roomsCount: roomCounts[b.id] ?? 0
+            }));
         },
 
         async findById(id) {
@@ -27,6 +32,7 @@ function createBuildingsRepository() {
                 createdAt: new Date().toISOString()
             };
             buildings.push(building);
+            roomCounts[building.id] = 0;
             return building;
         }
     };

@@ -17,7 +17,10 @@ function createApp({
     reservationsRepository,
     now
 }) {
-    const buildingsService = createBuildingsService({ buildingsRepository });
+    const buildingsService = createBuildingsService({
+        buildingsRepository,
+        roomsRepository
+    });
     const roomsService = createRoomsService({ roomsRepository, buildingsRepository });
     const reservationsService = createReservationsService({
         reservationsRepository,
