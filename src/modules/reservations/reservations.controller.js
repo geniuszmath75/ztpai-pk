@@ -6,9 +6,11 @@ import {
 function createReservationsController({ reservationsService }) {
     return {
         async list(req, res) {
-            const roomId = req.validated.query?.roomId;
-            const reservations = await reservationsService.list(roomId);
-            res.json(reservations.map(toReservationDetailsResponse));
+            const result = await reservationsService.list(req.validated.query);
+            res.json({
+                data: result.data.map(toReservationDetailsResponse),
+                meta: result.meta
+            });
         },
 
         async getById(req, res) {

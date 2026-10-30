@@ -19,6 +19,10 @@ function withDetails(item) {
     };
 }
 
+function overlaps(aStart, aEnd, bStart, bEnd) {
+    return aStart < bEnd && bStart < aEnd;
+}
+
 function createReservationsRepository() {
     const items = [
         {
@@ -42,12 +46,53 @@ function createReservationsRepository() {
             return items;
         },
 
-        async findAllWithDetails(roomId) {
-            let list = items;
+        async findPage(filters) {
+            const { roomId, buildingId, status, from, to, page, limit, sort } = filters;
+            let list = [...items];
+
             if (roomId !== undefined) {
-                list = items.filter((item) => item.roomId === roomId);
+                list = list.filter((r) => r.roomId === roomId);
             }
-            return list.map(withDetails);
+            if (buildingId !== undefined) {
+                list = list.filter((r) => roomsById[r.roomId]?.building?.id === buildingId);
+            }
+            if (status !== undefined) {
+                list = list.filter((r) => r.status === status);
+            }
+            if (from !== undefined || to !== undefined) {
+                const fromMs = from !== undefined ? new Date(from).getTime() : -Infinity;
+                const toMs = to !== undefined ? new Date(to).getTime() : Infinity;
+                list = list.filter((r) =>
+                    overlaps(
+                        new Date(r.startTime).getTime(),
+                        new Date(r.endTime).getTime(),
+                        fromMs,
+                        toMs
+                    )
+                );
+            }
+
+            const field = sort.replace(/^-/, '');
+            const dir = sort.startsWith('-') ? -1 : 1;
+            const key =
+                field === 'startTime'
+                    ? 'startTime'
+                    : field === 'createdAt'
+                      ? 'createdAt'
+                      : 'participants';
+            list.sort((a, b) => {
+                const av = key === 'participants' ? a.participants : new Date(a[key]).getTime();
+                const bv = key === 'participants' ? b.participants : new Date(b[key]).getTime();
+                if (av !== bv) {
+                    return av < bv ? -dir : dir;
+                }
+                return a.id - b.id;
+            });
+
+            const total = list.length;
+            const offset = (page - 1) * limit;
+            const rows = list.slice(offset, offset + limit).map(withDetails);
+            return { rows, total };
         },
 
         async findById(id) {

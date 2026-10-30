@@ -1,3 +1,12 @@
+const SORT_COLUMNS = {
+    startTime: 'reservations.start_time',
+    '-startTime': 'reservations.start_time',
+    createdAt: 'reservations.created_at',
+    '-createdAt': 'reservations.created_at',
+    participants: 'reservations.participants',
+    '-participants': 'reservations.participants'
+};
+
 function mapReservation(row) {
     return {
         id: row.id,
@@ -53,6 +62,26 @@ function detailsQuery(knex) {
         );
 }
 
+function applyListFilters(q, { roomId, buildingId, status, from, to }) {
+    if (roomId !== undefined) {
+        q.where('reservations.room_id', roomId);
+    }
+    if (buildingId !== undefined) {
+        q.where('rooms.building_id', buildingId);
+    }
+    if (status !== undefined) {
+        q.where('reservations.status', status);
+    }
+    // nakładanie [from, to) ∩ [start, end) ⇔ start < to && from < end
+    if (from !== undefined) {
+        q.where('reservations.end_time', '>', from);
+    }
+    if (to !== undefined) {
+        q.where('reservations.start_time', '<', to);
+    }
+    return q;
+}
+
 function createReservationsRepository(knex) {
     return {
         async findAll() {
@@ -60,14 +89,33 @@ function createReservationsRepository(knex) {
             return rows.map(mapReservation);
         },
 
-        // 1 zapytanie z JOIN — bez N+1 niezależnie od liczby rezerwacji
-        async findAllWithDetails(roomId) {
-            let q = detailsQuery(knex).orderBy('reservations.id');
-            if (roomId !== undefined) {
-                q = q.where('reservations.room_id', roomId);
-            }
-            const rows = await q;
-            return rows.map(mapReservationWithDetails);
+        async findPage(filters) {
+            const { page, limit, sort } = filters;
+            const column = SORT_COLUMNS[sort];
+            const direction = sort.startsWith('-') ? 'desc' : 'asc';
+            const offset = (page - 1) * limit;
+
+            const countQ = knex('reservations')
+                .join('rooms', 'reservations.room_id', 'rooms.id')
+                .join('buildings', 'rooms.building_id', 'buildings.id')
+                .countDistinct('reservations.id as total');
+            applyListFilters(countQ, filters);
+            const countRow = await countQ.first();
+            const total = Number(countRow.total);
+
+            const dataQ = detailsQuery(knex);
+            applyListFilters(dataQ, filters);
+            dataQ
+                .orderBy(column, direction)
+                .orderBy('reservations.id', 'asc')
+                .limit(limit)
+                .offset(offset);
+
+            const rows = await dataQ;
+            return {
+                rows: rows.map(mapReservationWithDetails),
+                total
+            };
         },
 
         async findById(id) {

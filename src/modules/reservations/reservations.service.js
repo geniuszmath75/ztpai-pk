@@ -22,8 +22,18 @@ function createReservationsService({
     roomsRepository,
     now = () => new Date()
 }) {
-    async function list(roomId) {
-        return reservationsRepository.findAllWithDetails(roomId);
+    async function list(query) {
+        const { page, limit } = query;
+        const { rows, total } = await reservationsRepository.findPage(query);
+        return {
+            data: rows,
+            meta: {
+                page,
+                limit,
+                total,
+                totalPages: limit > 0 ? Math.ceil(total / limit) : 0
+            }
+        };
     }
 
     async function getById(id) {

@@ -17,14 +17,41 @@ const reservationIdParamsSchema = z
     })
     .strict();
 
+const limitParam = z
+    .string()
+    .regex(/^[1-9]\d*$/, 'Must be a positive integer')
+    .transform(Number)
+    .pipe(z.number().int().min(1).max(100));
+
+const SORT_VALUES = [
+    'startTime',
+    '-startTime',
+    'createdAt',
+    '-createdAt',
+    'participants',
+    '-participants'
+];
+
 const listReservationsQuerySchema = z
     .object({
-        roomId: positiveIntParam.optional()
+        roomId: positiveIntParam.optional(),
+        buildingId: positiveIntParam.optional(),
+        status: z.enum(['CONFIRMED', 'CANCELLED']).optional(),
+        from: z.iso.datetime({ offset: true }).optional(),
+        to: z.iso.datetime({ offset: true }).optional(),
+        page: positiveIntParam.optional().default(1),
+        limit: limitParam.optional().default(20),
+        sort: z.enum(SORT_VALUES).optional().default('startTime')
     })
-    .strict();
+    .strict()
+    .refine(
+        (q) => !(q.from !== undefined && q.to !== undefined && q.from >= q.to),
+        { message: 'from must be earlier than to', path: ['from'] }
+    );
 
 export {
     createReservationBodySchema,
     reservationIdParamsSchema,
-    listReservationsQuerySchema
+    listReservationsQuerySchema,
+    SORT_VALUES
 };
