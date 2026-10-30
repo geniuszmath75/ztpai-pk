@@ -15,6 +15,7 @@ function createApp({
     buildingsRepository,
     roomsRepository,
     reservationsRepository,
+    runInTransaction,
     now
 }) {
     const buildingsService = createBuildingsService({
@@ -25,6 +26,7 @@ function createApp({
     const reservationsService = createReservationsService({
         reservationsRepository,
         roomsRepository,
+        runInTransaction,
         now
     });
 

@@ -32,6 +32,12 @@ function createRoomsRepository(knex) {
             return row ? mapRoom(row) : null;
         },
 
+        // blokada wiersza sali — serializuje rezerwacje tej samej sali
+        async findByIdForUpdate(id) {
+            const row = await knex('rooms').where({ id }).forUpdate().first();
+            return row ? mapRoom(row) : null;
+        },
+
         // 1 JOIN — stała liczba zapytań
         async findByIdWithBuilding(id) {
             const row = await knex('rooms')

@@ -28,6 +28,17 @@ function errorHandler(err, req, res, _next) {
         });
     }
 
+    // exclusion_violation (nakładające się CONFIRMED)
+    if (err.code === '23P01') {
+        return res.status(409).json({
+            error: {
+                code: 'ROOM_ALREADY_BOOKED',
+                message: 'Room already has an overlapping confirmed reservation',
+                requestId
+            }
+        });
+    }
+
     if (err instanceof AppError) {
         return res.status(err.statusCode).json({
             error: {

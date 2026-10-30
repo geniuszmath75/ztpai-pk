@@ -21,6 +21,10 @@ function createRoomsRepository() {
             return rooms.find((room) => room.id === id) ?? null;
         },
 
+        async findByIdForUpdate(id) {
+            return rooms.find((room) => room.id === id) ?? null;
+        },
+
         async findByIdWithBuilding(id) {
             const room = rooms.find((r) => r.id === id);
             if (!room) {

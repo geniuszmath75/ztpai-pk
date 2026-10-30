@@ -20,6 +20,7 @@ function overlaps(aStart, aEnd, bStart, bEnd) {
 function createReservationsService({
     reservationsRepository,
     roomsRepository,
+    runInTransaction,
     now = () => new Date()
 }) {
     async function list(query) {
@@ -44,7 +45,7 @@ function createReservationsService({
         return reservation;
     }
 
-    async function create(payload) {
+    async function createInRepos(payload, roomsRepo, reservationsRepo) {
         const startMs = new Date(payload.startTime).getTime();
         const endMs = new Date(payload.endTime).getTime();
         const nowMs = now().getTime();
@@ -71,7 +72,8 @@ function createReservationsService({
             );
         }
 
-        const room = await roomsRepository.findById(payload.roomId);
+        // FOR UPDATE na rooms — serializuje równoległe bookingi tej samej sali
+        const room = await roomsRepo.findByIdForUpdate(payload.roomId);
         if (!room) {
             throw new NotFoundError('Room not found');
         }
@@ -83,7 +85,7 @@ function createReservationsService({
             );
         }
 
-        const active = await reservationsRepository.findConfirmedByRoomId(payload.roomId);
+        const active = await reservationsRepo.findConfirmedByRoomId(payload.roomId);
         const conflict = active.some((existing) =>
             overlaps(
                 startMs,
@@ -100,7 +102,7 @@ function createReservationsService({
             );
         }
 
-        return reservationsRepository.create({
+        return reservationsRepo.create({
             roomId: payload.roomId,
             reservedBy: payload.reservedBy,
             participants: payload.participants,
@@ -111,6 +113,15 @@ function createReservationsService({
             cancelledAt: null,
             internalNote: 'created via API v2'
         });
+    }
+
+    async function create(payload) {
+        if (runInTransaction) {
+            return runInTransaction(({ roomsRepository: roomsRepo, reservationsRepository: reservationsRepo }) =>
+                createInRepos(payload, roomsRepo, reservationsRepo)
+            );
+        }
+        return createInRepos(payload, roomsRepository, reservationsRepository);
     }
 
     async function cancel(id) {
