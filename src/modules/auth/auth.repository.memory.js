@@ -19,6 +19,16 @@ function createAuthRepository() {
             };
             users.push(user);
             return { ...user };
+        },
+
+        async findByEmail(email) {
+            const user = users.find((u) => u.email === email);
+            return user ? { ...user } : null;
+        },
+
+        async findById(id) {
+            const user = users.find((u) => u.id === id);
+            return user ? { ...user } : null;
         }
     };
 }

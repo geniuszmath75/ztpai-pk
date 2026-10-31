@@ -9,4 +9,13 @@ const registerBodySchema = z
     })
     .strict();
 
-export { registerBodySchema };
+const loginBodySchema = z
+    .object({
+        email: z
+            .email()
+            .transform((value) => value.toLowerCase()),
+        password: z.string().min(1)
+    })
+    .strict();
+
+export { registerBodySchema, loginBodySchema };

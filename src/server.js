@@ -13,6 +13,13 @@ import { createReservationsRepository as createReservationsRepositoryKnex } from
 const PORT = 3000;
 // wybór implementacji wyłącznie tutaj: knex | memory
 const STORAGE = process.env.STORAGE || 'knex';
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '15m';
+
+if (!JWT_SECRET) {
+    console.error('Missing JWT_SECRET in environment');
+    process.exit(1);
+}
 
 let authRepository;
 let buildingsRepository;
@@ -48,7 +55,9 @@ const app = createApp({
     buildingsRepository,
     roomsRepository,
     reservationsRepository,
-    runInTransaction
+    runInTransaction,
+    jwtSecret: JWT_SECRET,
+    jwtExpiresIn: JWT_EXPIRES_IN
 });
 
 app.listen(PORT, () => {

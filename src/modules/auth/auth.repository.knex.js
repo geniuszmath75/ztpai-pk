@@ -29,6 +29,16 @@ function createAuthRepository(knex) {
                 }
                 throw err;
             }
+        },
+
+        async findByEmail(email) {
+            const row = await knex('users').where({ email }).first();
+            return row ? mapUser(row) : null;
+        },
+
+        async findById(id) {
+            const row = await knex('users').where({ id }).first();
+            return row ? mapUser(row) : null;
         }
     };
 }

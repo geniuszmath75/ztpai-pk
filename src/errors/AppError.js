@@ -31,4 +31,17 @@ class ConflictError extends AppError {
     }
 }
 
-export { AppError, ValidationError, BadRequestError, NotFoundError, ConflictError };
+class UnauthorizedError extends AppError {
+    constructor(message = 'Unauthorized', code = 'UNAUTHORIZED') {
+        super(401, code, message);
+    }
+}
+
+export {
+    AppError,
+    ValidationError,
+    BadRequestError,
+    NotFoundError,
+    ConflictError,
+    UnauthorizedError
+};
