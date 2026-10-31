@@ -1,8 +1,18 @@
+import bcrypt from 'bcryptjs';
+
 /**
  * Idempotentny seed: truncate + RESTART IDENTITY → ID zawsze od 1.
+ * ADMIN tylko tutaj — nie da się go utworzyć przez API rejestracji.
  */
 export async function seed(knex) {
-    await knex.raw('TRUNCATE reservations, rooms, buildings RESTART IDENTITY CASCADE');
+    await knex.raw('TRUNCATE reservations, rooms, buildings, users RESTART IDENTITY CASCADE');
+
+    const adminPasswordHash = await bcrypt.hash('admin-super-secret-password', 10);
+    await knex('users').insert({
+        email: 'admin@example.com',
+        password_hash: adminPasswordHash,
+        role: 'ADMIN'
+    });
 
     await knex('buildings').insert([
         { name: 'Budynek A', address: 'ul. Warszawska 24, Kraków' },

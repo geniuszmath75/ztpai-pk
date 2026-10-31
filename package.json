@@ -1,5 +1,5 @@
 {
-  "name": "lab02",
+  "name": "lab04",
   "version": "1.0.0",
   "description": "Room Booking API - architektura i reguły biznesowe",
   "main": "src/server.js",
@@ -13,6 +13,7 @@
   "keywords": [],
   "type": "module",
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "knex": "^3.3.0",

@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import { createApp } from './app.js';
 import { createKnex } from './db/knex.js';
+import { createAuthRepository as createAuthRepositoryMemory } from './modules/auth/auth.repository.memory.js';
+import { createAuthRepository as createAuthRepositoryKnex } from './modules/auth/auth.repository.knex.js';
 import { createBuildingsRepository as createBuildingsRepositoryMemory } from './modules/buildings/buildings.repository.memory.js';
 import { createBuildingsRepository as createBuildingsRepositoryKnex } from './modules/buildings/buildings.repository.knex.js';
 import { createRoomsRepository as createRoomsRepositoryMemory } from './modules/rooms/rooms.repository.memory.js';
@@ -12,6 +14,7 @@ const PORT = 3000;
 // wybór implementacji wyłącznie tutaj: knex | memory
 const STORAGE = process.env.STORAGE || 'knex';
 
+let authRepository;
 let buildingsRepository;
 let roomsRepository;
 let reservationsRepository;
@@ -19,6 +22,7 @@ let runInTransaction;
 
 if (STORAGE === 'knex') {
     const knex = createKnex();
+    authRepository = createAuthRepositoryKnex(knex);
     buildingsRepository = createBuildingsRepositoryKnex(knex);
     roomsRepository = createRoomsRepositoryKnex(knex);
     reservationsRepository = createReservationsRepositoryKnex(knex);
@@ -31,6 +35,7 @@ if (STORAGE === 'knex') {
             })
         );
 } else {
+    authRepository = createAuthRepositoryMemory();
     buildingsRepository = createBuildingsRepositoryMemory();
     roomsRepository = createRoomsRepositoryMemory();
     reservationsRepository = createReservationsRepositoryMemory();
@@ -39,6 +44,7 @@ if (STORAGE === 'knex') {
 }
 
 const app = createApp({
+    authRepository,
     buildingsRepository,
     roomsRepository,
     reservationsRepository,
