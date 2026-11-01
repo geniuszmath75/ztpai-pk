@@ -6,7 +6,7 @@ import {
 function createReservationsController({ reservationsService }) {
     return {
         async list(req, res) {
-            const result = await reservationsService.list(req.validated.query);
+            const result = await reservationsService.list(req.validated.query, req.user);
             res.json({
                 data: result.data.map(toReservationDetailsResponse),
                 meta: result.meta
@@ -14,7 +14,10 @@ function createReservationsController({ reservationsService }) {
         },
 
         async getById(req, res) {
-            const reservation = await reservationsService.getById(req.validated.params.id);
+            const reservation = await reservationsService.getById(
+                req.validated.params.id,
+                req.user
+            );
             res.json(toReservationDetailsResponse(reservation));
         },
 
@@ -30,7 +33,10 @@ function createReservationsController({ reservationsService }) {
         },
 
         async cancel(req, res) {
-            const reservation = await reservationsService.cancel(req.validated.params.id);
+            const reservation = await reservationsService.cancel(
+                req.validated.params.id,
+                req.user
+            );
             res.json(toReservationResponse(reservation));
         }
     };

@@ -36,6 +36,7 @@ const listReservationsQuerySchema = z
     .object({
         roomId: positiveIntParam.optional(),
         buildingId: positiveIntParam.optional(),
+        userId: positiveIntParam.optional(),
         status: z.enum(['CONFIRMED', 'CANCELLED']).optional(),
         from: z.iso.datetime({ offset: true }).optional(),
         to: z.iso.datetime({ offset: true }).optional(),

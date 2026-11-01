@@ -53,7 +53,7 @@ function createReservationsRepository() {
         },
 
         async findPage(filters) {
-            const { roomId, buildingId, status, from, to, page, limit, sort } = filters;
+            const { roomId, buildingId, userId, status, from, to, page, limit, sort } = filters;
             let list = [...items];
 
             if (roomId !== undefined) {
@@ -61,6 +61,9 @@ function createReservationsRepository() {
             }
             if (buildingId !== undefined) {
                 list = list.filter((r) => roomsById[r.roomId]?.building?.id === buildingId);
+            }
+            if (userId !== undefined) {
+                list = list.filter((r) => r.userId === userId);
             }
             if (status !== undefined) {
                 list = list.filter((r) => r.status === status);

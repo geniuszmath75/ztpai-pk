@@ -1,0 +1,265 @@
+@baseUrl = http://localhost:3000
+@contentType = application/json
+
+### ============================================================
+### Lab04 zadanie 4 — tabela uprawnień (logi / screenshoty)
+### Wymaga: npm run seed:run && npm start
+### Konta seed:
+###   ADMIN  admin@example.com / admin-super-secret-password
+###   OWNER  anna.nowak@example.com / seed-user-password-xx  (rezerwacja id=2)
+###   OTHER  jan.kowalski@example.com / seed-user-password-xx
+### Kolumny: brak tokenu | USER właściciel | USER obcy | ADMIN
+### ============================================================
+
+### --- Logowania (uruchom najpierw, żeby ustawić tokeny) ---
+
+### Login ADMIN
+# @name loginAdmin
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "admin@example.com",
+  "password": "admin-super-secret-password"
+}
+
+###
+@adminToken = {{loginAdmin.response.body.accessToken}}
+
+### Login USER właściciel (Anna — reservations/:id = 2)
+# @name loginOwner
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "anna.nowak@example.com",
+  "password": "seed-user-password-xx"
+}
+
+###
+@ownerToken = {{loginOwner.response.body.accessToken}}
+
+### Login USER obcy (Jan)
+# @name loginOther
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "jan.kowalski@example.com",
+  "password": "seed-user-password-xx"
+}
+
+###
+@otherToken = {{loginOther.response.body.accessToken}}
+
+### ============================================================
+### GET /api/buildings → 401 | 200 | 200 | 200
+### ============================================================
+
+### GET /api/buildings — brak tokenu → 401
+GET {{baseUrl}}/api/buildings
+
+### GET /api/buildings — USER właściciel → 200
+GET {{baseUrl}}/api/buildings
+Authorization: Bearer {{ownerToken}}
+
+### GET /api/buildings — USER obcy → 200
+GET {{baseUrl}}/api/buildings
+Authorization: Bearer {{otherToken}}
+
+### GET /api/buildings — ADMIN → 200
+GET {{baseUrl}}/api/buildings
+Authorization: Bearer {{adminToken}}
+
+### ============================================================
+### POST /api/buildings → 401 | 403 | 403 | 201
+### ============================================================
+
+### POST /api/buildings — brak tokenu → 401
+POST {{baseUrl}}/api/buildings
+Content-Type: {{contentType}}
+
+{
+  "name": "Budynek Test Brak",
+  "address": "ul. Test 1"
+}
+
+### POST /api/buildings — USER właściciel → 403
+POST {{baseUrl}}/api/buildings
+Authorization: Bearer {{ownerToken}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Budynek Test Owner",
+  "address": "ul. Test 2"
+}
+
+### POST /api/buildings — USER obcy → 403
+POST {{baseUrl}}/api/buildings
+Authorization: Bearer {{otherToken}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Budynek Test Other",
+  "address": "ul. Test 3"
+}
+
+### POST /api/buildings — ADMIN → 201
+POST {{baseUrl}}/api/buildings
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Budynek Test Admin",
+  "address": "ul. Test 4"
+}
+
+### ============================================================
+### POST /api/rooms → 401 | 403 | 403 | 201
+### ============================================================
+
+### POST /api/rooms — brak tokenu → 401
+POST {{baseUrl}}/api/rooms
+Content-Type: {{contentType}}
+
+{
+  "buildingId": 1,
+  "name": "R-brak",
+  "capacity": 5
+}
+
+### POST /api/rooms — USER właściciel → 403
+POST {{baseUrl}}/api/rooms
+Authorization: Bearer {{ownerToken}}
+Content-Type: {{contentType}}
+
+{
+  "buildingId": 1,
+  "name": "R-owner",
+  "capacity": 5
+}
+
+### POST /api/rooms — USER obcy → 403
+POST {{baseUrl}}/api/rooms
+Authorization: Bearer {{otherToken}}
+Content-Type: {{contentType}}
+
+{
+  "buildingId": 1,
+  "name": "R-other",
+  "capacity": 5
+}
+
+### POST /api/rooms — ADMIN → 201
+POST {{baseUrl}}/api/rooms
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+{
+  "buildingId": 1,
+  "name": "R-admin",
+  "capacity": 5
+}
+
+### ============================================================
+### GET /api/reservations → 401 | 200 (swoje) | 200 (swoje) | 200 (wszystkie)
+### ============================================================
+
+### GET /api/reservations — brak tokenu → 401
+GET {{baseUrl}}/api/reservations?limit=1
+
+### GET /api/reservations — USER właściciel → 200 (tylko userId=3)
+GET {{baseUrl}}/api/reservations?limit=1
+Authorization: Bearer {{ownerToken}}
+
+### GET /api/reservations — USER obcy → 200 (tylko userId=4)
+GET {{baseUrl}}/api/reservations?limit=1
+Authorization: Bearer {{otherToken}}
+
+### GET /api/reservations — ADMIN → 200 (wszystkie)
+GET {{baseUrl}}/api/reservations?limit=1
+Authorization: Bearer {{adminToken}}
+
+### ============================================================
+### GET /api/reservations?userId=3 → 401 | 403 | 403 | 200
+### ============================================================
+
+### GET /api/reservations?userId=3 — brak tokenu → 401
+GET {{baseUrl}}/api/reservations?userId=3
+
+### GET /api/reservations?userId=3 — USER właściciel → 403
+GET {{baseUrl}}/api/reservations?userId=3
+Authorization: Bearer {{ownerToken}}
+
+### GET /api/reservations?userId=3 — USER obcy → 403
+GET {{baseUrl}}/api/reservations?userId=3
+Authorization: Bearer {{otherToken}}
+
+### GET /api/reservations?userId=3 — ADMIN → 200
+GET {{baseUrl}}/api/reservations?userId=3
+Authorization: Bearer {{adminToken}}
+
+### ============================================================
+### GET /api/reservations/2 → 401 | 200 | 404 | 200
+### (id=2 należy do Anny / OWNER)
+### ============================================================
+
+### GET /api/reservations/2 — brak tokenu → 401
+GET {{baseUrl}}/api/reservations/2
+
+### GET /api/reservations/2 — USER właściciel → 200
+GET {{baseUrl}}/api/reservations/2
+Authorization: Bearer {{ownerToken}}
+
+### GET /api/reservations/2 — USER obcy → 404
+GET {{baseUrl}}/api/reservations/2
+Authorization: Bearer {{otherToken}}
+
+### GET /api/reservations/2 — ADMIN → 200
+GET {{baseUrl}}/api/reservations/2
+Authorization: Bearer {{adminToken}}
+
+### ============================================================
+### PATCH /api/reservations/:id/cancel → 401 | 200* | 404 | 200*/409
+### * 409 gdy rezerwacja już rozpoczęta (np. id=1)
+### Używamy przyszłej rezerwacji Anny (id=2) do cancel OWNER/ADMIN
+### oraz id=2 dla OTHER → 404; id=1 dla ADMIN → 409 (started)
+### ============================================================
+
+### PATCH cancel/2 — brak tokenu → 401
+PATCH {{baseUrl}}/api/reservations/2/cancel
+
+### PATCH cancel/2 — USER obcy → 404
+PATCH {{baseUrl}}/api/reservations/2/cancel
+Authorization: Bearer {{otherToken}}
+
+### PATCH cancel/1 — ADMIN (już rozpoczęta) → 409
+PATCH {{baseUrl}}/api/reservations/1/cancel
+Authorization: Bearer {{adminToken}}
+
+### PATCH cancel/2 — USER właściciel → 200
+### (uruchom po wierszach powyżej; po cancel status=CANCELLED)
+PATCH {{baseUrl}}/api/reservations/2/cancel
+Authorization: Bearer {{ownerToken}}
+
+### --- Opcjonalnie: świeża rezerwacja + cancel ADMIN ---
+
+### ADMIN tworzy rezerwację do cancel
+# @name adminCreateReservation
+POST {{baseUrl}}/api/reservations
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+{
+  "roomId": 5,
+  "participants": 2,
+  "startTime": "2027-09-01T10:00:00.000Z",
+  "endTime": "2027-09-01T11:00:00.000Z"
+}
+
+###
+@adminReservationId = {{adminCreateReservation.response.body.id}}
+
+### PATCH cancel (ADMIN, przyszła) → 200
+PATCH {{baseUrl}}/api/reservations/{{adminReservationId}}/cancel
+Authorization: Bearer {{adminToken}}

@@ -73,12 +73,15 @@ function detailsQuery(knex) {
         );
 }
 
-function applyListFilters(q, { roomId, buildingId, status, from, to }) {
+function applyListFilters(q, { roomId, buildingId, userId, status, from, to }) {
     if (roomId !== undefined) {
         q.where('reservations.room_id', roomId);
     }
     if (buildingId !== undefined) {
         q.where('rooms.building_id', buildingId);
+    }
+    if (userId !== undefined) {
+        q.where('reservations.user_id', userId);
     }
     if (status !== undefined) {
         q.where('reservations.status', status);

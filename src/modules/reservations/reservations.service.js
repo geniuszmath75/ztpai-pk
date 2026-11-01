@@ -1,6 +1,7 @@
 import {
     BadRequestError,
     ConflictError,
+    ForbiddenError,
     NotFoundError
 } from '../../errors/AppError.js';
 
@@ -17,15 +18,29 @@ function overlaps(aStart, aEnd, bStart, bEnd) {
     return aStart < bEnd && bStart < aEnd;
 }
 
+function canAccessReservation(reservation, currentUser) {
+    return currentUser.role === 'ADMIN' || reservation.userId === currentUser.id;
+}
+
 function createReservationsService({
     reservationsRepository,
     roomsRepository,
     runInTransaction,
     now = () => new Date()
 }) {
-    async function list(query) {
-        const { page, limit } = query;
-        const { rows, total } = await reservationsRepository.findPage(query);
+    async function list(query, currentUser) {
+        const filters = { ...query };
+
+        if (currentUser.role === 'USER') {
+            // ?userId= tylko dla ADMIN — 403 zamiast ignorowania (jasny sygnał dla frontu)
+            if (query.userId !== undefined) {
+                throw new ForbiddenError('userId filter is allowed for ADMIN only');
+            }
+            filters.userId = currentUser.id;
+        }
+
+        const { page, limit } = filters;
+        const { rows, total } = await reservationsRepository.findPage(filters);
         return {
             data: rows,
             meta: {
@@ -37,9 +52,9 @@ function createReservationsService({
         };
     }
 
-    async function getById(id) {
+    async function getById(id, currentUser) {
         const reservation = await reservationsRepository.findByIdWithDetails(id);
-        if (!reservation) {
+        if (!reservation || !canAccessReservation(reservation, currentUser)) {
             throw new NotFoundError('Reservation not found');
         }
         return reservation;
@@ -125,9 +140,9 @@ function createReservationsService({
         return createInRepos(body, roomsRepository, reservationsRepository);
     }
 
-    async function cancel(id) {
+    async function cancel(id, currentUser) {
         const reservation = await reservationsRepository.findById(id);
-        if (!reservation) {
+        if (!reservation || !canAccessReservation(reservation, currentUser)) {
             throw new NotFoundError('Reservation not found');
         }
 
@@ -143,6 +158,7 @@ function createReservationsService({
             );
         }
 
+        // reguły biznesowe także dla ADMIN
         const startMs = new Date(reservation.startTime).getTime();
         if (startMs <= now().getTime()) {
             throw new ConflictError(
