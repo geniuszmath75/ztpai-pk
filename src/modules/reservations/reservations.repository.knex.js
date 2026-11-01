@@ -11,7 +11,11 @@ function mapReservation(row) {
     return {
         id: row.id,
         roomId: row.room_id,
-        reservedBy: row.reserved_by,
+        userId: row.user_id,
+        user: {
+            id: row.user_id_joined ?? row.user_id,
+            email: row.user_email
+        },
         participants: row.participants,
         startTime: new Date(row.start_time).toISOString(),
         endTime: new Date(row.end_time).toISOString(),
@@ -24,7 +28,11 @@ function mapReservation(row) {
 function mapReservationWithDetails(row) {
     return {
         id: row.id,
-        reservedBy: row.reserved_by,
+        userId: row.user_id,
+        user: {
+            id: row.user_id_joined,
+            email: row.user_email
+        },
         participants: row.participants,
         startTime: new Date(row.start_time).toISOString(),
         endTime: new Date(row.end_time).toISOString(),
@@ -46,15 +54,18 @@ function detailsQuery(knex) {
     return knex('reservations')
         .join('rooms', 'reservations.room_id', 'rooms.id')
         .join('buildings', 'rooms.building_id', 'buildings.id')
+        .join('users', 'reservations.user_id', 'users.id')
         .select(
             'reservations.id',
-            'reservations.reserved_by',
+            'reservations.user_id',
             'reservations.participants',
             'reservations.start_time',
             'reservations.end_time',
             'reservations.status',
             'reservations.created_at',
             'reservations.cancelled_at',
+            'users.id as user_id_joined',
+            'users.email as user_email',
             'rooms.id as room_id_joined',
             'rooms.name as room_name',
             'buildings.id as building_id',
@@ -85,7 +96,14 @@ function applyListFilters(q, { roomId, buildingId, status, from, to }) {
 function createReservationsRepository(knex) {
     return {
         async findAll() {
-            const rows = await knex('reservations').select('*').orderBy('id');
+            const rows = await knex('reservations')
+                .join('users', 'reservations.user_id', 'users.id')
+                .select(
+                    'reservations.*',
+                    'users.id as user_id_joined',
+                    'users.email as user_email'
+                )
+                .orderBy('reservations.id');
             return rows.map(mapReservation);
         },
 
@@ -119,7 +137,15 @@ function createReservationsRepository(knex) {
         },
 
         async findById(id) {
-            const row = await knex('reservations').where({ id }).first();
+            const row = await knex('reservations')
+                .join('users', 'reservations.user_id', 'users.id')
+                .select(
+                    'reservations.*',
+                    'users.id as user_id_joined',
+                    'users.email as user_email'
+                )
+                .where('reservations.id', id)
+                .first();
             return row ? mapReservation(row) : null;
         },
 
@@ -130,8 +156,16 @@ function createReservationsRepository(knex) {
 
         async findConfirmedByRoomId(roomId) {
             const rows = await knex('reservations')
-                .where({ room_id: roomId, status: 'CONFIRMED' })
-                .select('*');
+                .join('users', 'reservations.user_id', 'users.id')
+                .select(
+                    'reservations.*',
+                    'users.id as user_id_joined',
+                    'users.email as user_email'
+                )
+                .where({
+                    'reservations.room_id': roomId,
+                    'reservations.status': 'CONFIRMED'
+                });
             return rows.map(mapReservation);
         },
 
@@ -139,7 +173,7 @@ function createReservationsRepository(knex) {
             const [row] = await knex('reservations')
                 .insert({
                     room_id: data.roomId,
-                    reserved_by: data.reservedBy,
+                    user_id: data.userId,
                     participants: data.participants,
                     start_time: data.startTime,
                     end_time: data.endTime,
@@ -148,7 +182,13 @@ function createReservationsRepository(knex) {
                     created_at: data.createdAt
                 })
                 .returning('*');
-            return mapReservation(row);
+
+            const user = await knex('users').where({ id: row.user_id }).first();
+            return mapReservation({
+                ...row,
+                user_id_joined: user.id,
+                user_email: user.email
+            });
         },
 
         async save(reservation) {
@@ -156,7 +196,7 @@ function createReservationsRepository(knex) {
                 .where({ id: reservation.id })
                 .update({
                     room_id: reservation.roomId,
-                    reserved_by: reservation.reservedBy,
+                    user_id: reservation.userId,
                     participants: reservation.participants,
                     start_time: reservation.startTime,
                     end_time: reservation.endTime,
@@ -165,7 +205,17 @@ function createReservationsRepository(knex) {
                     created_at: reservation.createdAt
                 })
                 .returning('*');
-            return row ? mapReservation(row) : null;
+
+            if (!row) {
+                return null;
+            }
+
+            const user = await knex('users').where({ id: row.user_id }).first();
+            return mapReservation({
+                ...row,
+                user_id_joined: user.id,
+                user_email: user.email
+            });
         }
     };
 }

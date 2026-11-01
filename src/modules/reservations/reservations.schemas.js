@@ -1,10 +1,10 @@
 import { z } from 'zod';
 import { positiveIntParam } from '../rooms/rooms.schemas.js';
 
+// userId/reservedBy w body → 400 (strict); właściciel z tokenu
 const createReservationBodySchema = z
     .object({
         roomId: z.number().int().positive(),
-        reservedBy: z.string().trim().min(3).max(100),
         participants: z.number().int().positive(),
         startTime: z.iso.datetime({ offset: true }),
         endTime: z.iso.datetime({ offset: true })

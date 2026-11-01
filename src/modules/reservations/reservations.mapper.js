@@ -5,11 +5,15 @@ function toUtcIso(value) {
     return new Date(value).toISOString();
 }
 
+function toUser(user) {
+    return { id: user.id, email: user.email };
+}
+
 function toReservationResponse(reservation) {
     return {
         id: reservation.id,
         roomId: reservation.roomId,
-        reservedBy: reservation.reservedBy,
+        user: toUser(reservation.user),
         participants: reservation.participants,
         startTime: toUtcIso(reservation.startTime),
         endTime: toUtcIso(reservation.endTime),
@@ -23,7 +27,7 @@ function toReservationDetailsResponse(reservation) {
     return {
         id: reservation.id,
         room: reservation.room,
-        reservedBy: reservation.reservedBy,
+        user: toUser(reservation.user),
         participants: reservation.participants,
         startTime: toUtcIso(reservation.startTime),
         endTime: toUtcIso(reservation.endTime),

@@ -49,10 +49,15 @@ function createApp({
     app.use(requestLogger);
     app.use(express.json());
 
+    // publiczne: register, login (+ /api/docs w zadaniu 5); reszta /api wymaga JWT
     app.use('/api/auth', createAuthRouter({ authController, authenticate }));
-    app.use('/api/buildings', createBuildingsRouter({ buildingsController }));
-    app.use('/api/rooms', createRoomsRouter({ roomsController }));
-    app.use('/api/reservations', createReservationsRouter({ reservationsController }));
+    app.use('/api/buildings', authenticate, createBuildingsRouter({ buildingsController }));
+    app.use('/api/rooms', authenticate, createRoomsRouter({ roomsController }));
+    app.use(
+        '/api/reservations',
+        authenticate,
+        createReservationsRouter({ reservationsController })
+    );
 
     app.use(notFoundHandler);
     app.use(errorHandler);

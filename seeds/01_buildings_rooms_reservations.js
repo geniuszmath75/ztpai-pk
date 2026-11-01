@@ -7,12 +7,41 @@ import bcrypt from 'bcryptjs';
 export async function seed(knex) {
     await knex.raw('TRUNCATE reservations, rooms, buildings, users RESTART IDENTITY CASCADE');
 
+    const passwordHash = await bcrypt.hash('seed-user-password-xx', 10);
     const adminPasswordHash = await bcrypt.hash('admin-super-secret-password', 10);
-    await knex('users').insert({
-        email: 'admin@example.com',
-        password_hash: adminPasswordHash,
-        role: 'ADMIN'
-    });
+
+    await knex('users').insert([
+        {
+            email: 'admin@example.com',
+            password_hash: adminPasswordHash,
+            role: 'ADMIN'
+        },
+        {
+            email: 'seed.user@example.com',
+            password_hash: passwordHash,
+            role: 'USER'
+        },
+        {
+            email: 'anna.nowak@example.com',
+            password_hash: passwordHash,
+            role: 'USER'
+        },
+        {
+            email: 'jan.kowalski@example.com',
+            password_hash: passwordHash,
+            role: 'USER'
+        },
+        {
+            email: 'piotr.wisniewski@example.com',
+            password_hash: passwordHash,
+            role: 'USER'
+        },
+        {
+            email: 'maria.zielinska@example.com',
+            password_hash: passwordHash,
+            role: 'USER'
+        }
+    ]);
 
     await knex('buildings').insert([
         { name: 'Budynek A', address: 'ul. Warszawska 24, Kraków' },
@@ -28,10 +57,10 @@ export async function seed(knex) {
     ]);
 
     await knex('reservations').insert([
-        // już rozpoczęta
+        // już rozpoczęta — user_id 2 = seed.user
         {
             room_id: 1,
-            reserved_by: 'Seed User',
+            user_id: 2,
             participants: 10,
             start_time: '2020-06-01T10:00:00.000Z',
             end_time: '2020-06-01T12:00:00.000Z',
@@ -41,7 +70,7 @@ export async function seed(knex) {
         },
         {
             room_id: 2,
-            reserved_by: 'Anna Nowak',
+            user_id: 3,
             participants: 8,
             start_time: '2026-11-10T10:00:00.000Z',
             end_time: '2026-11-10T12:00:00.000Z',
@@ -52,7 +81,7 @@ export async function seed(knex) {
         // CANCELLED
         {
             room_id: 3,
-            reserved_by: 'Jan Kowalski',
+            user_id: 4,
             participants: 20,
             start_time: '2026-12-01T09:00:00.000Z',
             end_time: '2026-12-01T11:00:00.000Z',
@@ -62,7 +91,7 @@ export async function seed(knex) {
         },
         {
             room_id: 4,
-            reserved_by: 'Piotr Wisniewski',
+            user_id: 5,
             participants: 5,
             start_time: '2026-11-15T14:00:00.000Z',
             end_time: '2026-11-15T16:00:00.000Z',
@@ -72,7 +101,7 @@ export async function seed(knex) {
         },
         {
             room_id: 5,
-            reserved_by: 'Maria Zielinska',
+            user_id: 6,
             participants: 6,
             start_time: '2026-11-20T08:00:00.000Z',
             end_time: '2026-11-20T10:00:00.000Z',

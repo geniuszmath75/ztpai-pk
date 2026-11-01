@@ -104,7 +104,7 @@ function createReservationsService({
 
         return reservationsRepo.create({
             roomId: payload.roomId,
-            reservedBy: payload.reservedBy,
+            userId: payload.userId,
             participants: payload.participants,
             startTime: new Date(payload.startTime).toISOString(),
             endTime: new Date(payload.endTime).toISOString(),
@@ -115,13 +115,14 @@ function createReservationsService({
         });
     }
 
-    async function create(payload) {
+    async function create(payload, currentUser) {
+        const body = { ...payload, userId: currentUser.id };
         if (runInTransaction) {
             return runInTransaction(({ roomsRepository: roomsRepo, reservationsRepository: reservationsRepo }) =>
-                createInRepos(payload, roomsRepo, reservationsRepo)
+                createInRepos(body, roomsRepo, reservationsRepo)
             );
         }
-        return createInRepos(payload, roomsRepository, reservationsRepository);
+        return createInRepos(body, roomsRepository, reservationsRepository);
     }
 
     async function cancel(id) {

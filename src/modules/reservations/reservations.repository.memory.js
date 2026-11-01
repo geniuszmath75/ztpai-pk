@@ -5,10 +5,16 @@ const roomsById = {
     4: { id: 4, name: 'D404', building: { id: 2, name: 'Budynek B' } }
 };
 
+const usersById = {
+    1: { id: 1, email: 'seed.user@seed.local' }
+};
+
 function withDetails(item) {
     return {
         id: item.id,
-        reservedBy: item.reservedBy,
+        roomId: item.roomId,
+        userId: item.userId,
+        user: usersById[item.userId] ?? { id: item.userId, email: 'unknown@example.com' },
         participants: item.participants,
         startTime: item.startTime,
         endTime: item.endTime,
@@ -28,7 +34,7 @@ function createReservationsRepository() {
         {
             id: 1,
             roomId: 1,
-            reservedBy: 'Seed User',
+            userId: 1,
             participants: 10,
             startTime: '2020-06-01T10:00:00.000Z',
             endTime: '2020-06-01T12:00:00.000Z',
@@ -43,7 +49,7 @@ function createReservationsRepository() {
 
     return {
         async findAll() {
-            return items;
+            return items.map((item) => withDetails(item));
         },
 
         async findPage(filters) {
@@ -96,7 +102,8 @@ function createReservationsRepository() {
         },
 
         async findById(id) {
-            return items.find((item) => item.id === id) ?? null;
+            const item = items.find((i) => i.id === id);
+            return item ? withDetails(item) : null;
         },
 
         async findByIdWithDetails(id) {
@@ -105,9 +112,9 @@ function createReservationsRepository() {
         },
 
         async findConfirmedByRoomId(roomId) {
-            return items.filter(
-                (item) => item.roomId === roomId && item.status === 'CONFIRMED'
-            );
+            return items
+                .filter((item) => item.roomId === roomId && item.status === 'CONFIRMED')
+                .map((item) => withDetails(item));
         },
 
         async create(data) {
@@ -116,7 +123,11 @@ function createReservationsRepository() {
                 ...data
             };
             items.push(reservation);
-            return reservation;
+            usersById[data.userId] ??= {
+                id: data.userId,
+                email: `user${data.userId}@example.com`
+            };
+            return withDetails(reservation);
         },
 
         async save(reservation) {
@@ -124,8 +135,18 @@ function createReservationsRepository() {
             if (index === -1) {
                 return null;
             }
-            items[index] = reservation;
-            return items[index];
+            items[index] = {
+                id: reservation.id,
+                roomId: reservation.roomId,
+                userId: reservation.userId,
+                participants: reservation.participants,
+                startTime: reservation.startTime,
+                endTime: reservation.endTime,
+                status: reservation.status,
+                createdAt: reservation.createdAt,
+                cancelledAt: reservation.cancelledAt
+            };
+            return withDetails(items[index]);
         }
     };
 }

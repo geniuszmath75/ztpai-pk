@@ -4,13 +4,14 @@ import { UnauthorizedError } from '../errors/AppError.js';
 function createAuthenticate({ jwtSecret }) {
     return (req, _res, next) => {
         const header = req.headers.authorization;
-        if (!header || !header.startsWith('Bearer ')) {
-            return next(new UnauthorizedError('Missing or invalid Authorization header'));
+        if (!header) {
+            return next(new UnauthorizedError('Missing Authorization header'));
         }
 
-        const token = header.slice('Bearer '.length).trim();
-        if (!token) {
-            return next(new UnauthorizedError('Missing or invalid Authorization header'));
+        // tylko Bearer <token>
+        const [scheme, token, ...rest] = header.split(' ');
+        if (scheme !== 'Bearer' || !token || rest.length > 0) {
+            return next(new UnauthorizedError('Invalid Authorization header'));
         }
 
         try {
@@ -21,6 +22,7 @@ function createAuthenticate({ jwtSecret }) {
             if (err.name === 'TokenExpiredError') {
                 return next(new UnauthorizedError('Token expired'));
             }
+            // zły podpis / zmodyfikowany payload / uszkodzony token
             return next(new UnauthorizedError('Invalid token'));
         }
     };

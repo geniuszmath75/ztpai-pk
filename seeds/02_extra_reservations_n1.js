@@ -1,6 +1,6 @@
 /**
  * Dodatkowe 15 rezerwacji pod demo braku N+1 (5 z 01 + 15 = 20).
- * Uruchamiane po 01 — bez truncate.
+ * Uruchamiane po 01 — bez truncate. user_id 2..6 cyklicznie.
  */
 export async function seed(knex) {
     const rows = [];
@@ -8,7 +8,7 @@ export async function seed(knex) {
         const day = String(i).padStart(2, '0');
         rows.push({
             room_id: ((i - 1) % 5) + 1,
-            reserved_by: `N1 User ${i}`,
+            user_id: ((i - 1) % 5) + 2,
             participants: 2,
             start_time: `2027-01-${day}T10:00:00.000Z`,
             end_time: `2027-01-${day}T11:00:00.000Z`,
