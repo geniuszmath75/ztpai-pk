@@ -1,21 +1,20 @@
-import 'dotenv/config';
 import pg from 'pg';
+import { config } from '../src/config/index.js';
 
-const BASE_URL = process.env.API_URL || 'http://localhost:3000';
-const ROOM_ID = Number(process.env.ROOM_ID || 1);
-const START = process.env.START_TIME || '2028-06-01T10:00:00.000Z';
-const END = process.env.END_TIME || '2028-06-01T12:00:00.000Z';
+const BASE_URL = 'http://localhost:3000';
+const ROOM_ID = 1;
+const START = '2028-06-01T10:00:00.000Z';
+const END = '2028-06-01T12:00:00.000Z';
 
 const body = {
     roomId: ROOM_ID,
-    reservedBy: 'Race Tester',
     participants: 2,
     startTime: START,
     endTime: END
 };
 
 async function main() {
-    const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
+    const client = new pg.Client({ connectionString: config.databaseUrl });
     await client.connect();
 
     // czyścimy ten slot, żeby test był powtarzalny

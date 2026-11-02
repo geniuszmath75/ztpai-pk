@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import { config } from './config/index.js';
 import { createApp } from './app.js';
 import { createKnex } from './db/knex.js';
 import { createAuthRepository as createAuthRepositoryMemory } from './modules/auth/auth.repository.memory.js';
@@ -10,24 +10,13 @@ import { createRoomsRepository as createRoomsRepositoryKnex } from './modules/ro
 import { createReservationsRepository as createReservationsRepositoryMemory } from './modules/reservations/reservations.repository.memory.js';
 import { createReservationsRepository as createReservationsRepositoryKnex } from './modules/reservations/reservations.repository.knex.js';
 
-const PORT = 3000;
-// wybór implementacji wyłącznie tutaj: knex | memory
-const STORAGE = process.env.STORAGE || 'knex';
-const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '15m';
-
-if (!JWT_SECRET) {
-    console.error('Missing JWT_SECRET in environment');
-    process.exit(1);
-}
-
 let authRepository;
 let buildingsRepository;
 let roomsRepository;
 let reservationsRepository;
 let runInTransaction;
 
-if (STORAGE === 'knex') {
+if (config.storage === 'knex') {
     const knex = createKnex();
     authRepository = createAuthRepositoryKnex(knex);
     buildingsRepository = createBuildingsRepositoryKnex(knex);
@@ -56,10 +45,17 @@ const app = createApp({
     roomsRepository,
     reservationsRepository,
     runInTransaction,
-    jwtSecret: JWT_SECRET,
-    jwtExpiresIn: JWT_EXPIRES_IN
+    jwtSecret: config.jwtSecret,
+    jwtExpiresIn: config.jwtExpiresIn
 });
 
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT} (storage=${STORAGE})...`);
+// Express 5: callback dostaje też błąd listen (np. EADDRINUSE)
+app.listen(config.port, (err) => {
+    if (err) {
+        console.error(err);
+        process.exit(1);
+    }
+    console.log(
+        `Server running on http://localhost:${config.port} (storage=${config.storage})...`
+    );
 });

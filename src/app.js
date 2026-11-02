@@ -1,7 +1,9 @@
 import express from 'express';
+import swaggerUi from 'swagger-ui-express';
 import { requestLogger } from './middleware/requestLogger.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { createAuthenticate } from './middleware/authenticate.js';
+import { openApiSpec } from './docs/openapi.js';
 import { createAuthService } from './modules/auth/auth.service.js';
 import { createAuthController } from './modules/auth/auth.controller.js';
 import { createAuthRouter } from './modules/auth/auth.routes.js';
@@ -49,7 +51,8 @@ function createApp({
     app.use(requestLogger);
     app.use(express.json());
 
-    // publiczne: register, login (+ /api/docs w zadaniu 5); reszta /api wymaga JWT
+    // publiczne: /api/docs, register, login; reszta /api wymaga JWT
+    app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
     app.use('/api/auth', createAuthRouter({ authController, authenticate }));
     app.use('/api/buildings', authenticate, createBuildingsRouter({ buildingsController }));
     app.use('/api/rooms', authenticate, createRoomsRouter({ roomsController }));
