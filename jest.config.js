@@ -1,4 +1,5 @@
 export default {
     testEnvironment: 'node',
-    testMatch: ['**/tests/unit/**/*.test.js']
+    testMatch: ['**/tests/**/*.test.js'],
+    setupFiles: ['<rootDir>/tests/integration/setupEnv.js']
 };
