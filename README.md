@@ -1,5 +1,7 @@
 # Room Booking API
 
+[![CI](https://github.com/geniuszmath75/ztpai-pk/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/geniuszmath75/ztpai-pk/actions/workflows/ci.yml)
+
 ## Uruchomienie przez Docker Compose
 
 ```bash
