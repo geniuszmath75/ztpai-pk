@@ -9,13 +9,19 @@ import { createRoomsRepository as createRoomsRepositoryMemory } from './modules/
 import { createRoomsRepository as createRoomsRepositoryKnex } from './modules/rooms/rooms.repository.knex.js';
 import { createReservationsRepository as createReservationsRepositoryMemory } from './modules/reservations/reservations.repository.memory.js';
 import { createReservationsRepository as createReservationsRepositoryKnex } from './modules/reservations/reservations.repository.knex.js';
+import { createAuditLogRepository as createAuditLogRepositoryMemory } from './modules/audit/audit.repository.memory.js';
+import { createAuditLogRepository as createAuditLogRepositoryKnex } from './modules/audit/audit.repository.knex.js';
+import { createEventBus } from './events/eventBus.js';
+import { registerEventListeners } from './events/registerListeners.js';
 
 let authRepository;
 let buildingsRepository;
 let roomsRepository;
 let reservationsRepository;
+let auditLogRepository;
 let runInTransaction;
 let knex;
+const eventBus = createEventBus();
 
 if (config.storage === 'knex') {
     knex = createKnex();
@@ -23,6 +29,7 @@ if (config.storage === 'knex') {
     buildingsRepository = createBuildingsRepositoryKnex(knex);
     roomsRepository = createRoomsRepositoryKnex(knex);
     reservationsRepository = createReservationsRepositoryKnex(knex);
+    auditLogRepository = createAuditLogRepositoryKnex(knex);
     runInTransaction = (fn) =>
         knex.transaction(async (trx) =>
             fn({
@@ -36,9 +43,12 @@ if (config.storage === 'knex') {
     buildingsRepository = createBuildingsRepositoryMemory();
     roomsRepository = createRoomsRepositoryMemory();
     reservationsRepository = createReservationsRepositoryMemory();
+    auditLogRepository = createAuditLogRepositoryMemory();
     runInTransaction = async (fn) =>
         fn({ buildingsRepository, roomsRepository, reservationsRepository });
 }
+
+registerEventListeners({ eventBus, auditLogRepository, authRepository });
 
 const app = createApp({
     authRepository,
@@ -47,7 +57,9 @@ const app = createApp({
     reservationsRepository,
     runInTransaction,
     jwtSecret: config.jwtSecret,
-    jwtExpiresIn: config.jwtExpiresIn
+    jwtExpiresIn: config.jwtExpiresIn,
+    eventBus,
+    auditLogRepository
 });
 
 const server = app.listen(config.port, (err) => {

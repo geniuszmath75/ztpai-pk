@@ -26,6 +26,7 @@ function createReservationsService({
     reservationsRepository,
     roomsRepository,
     runInTransaction,
+    eventBus,
     now = () => new Date()
 }) {
     async function list(query, currentUser) {
@@ -132,12 +133,26 @@ function createReservationsService({
 
     async function create(payload, currentUser) {
         const body = { ...payload, userId: currentUser.id };
+        let reservation;
         if (runInTransaction) {
-            return runInTransaction(({ roomsRepository: roomsRepo, reservationsRepository: reservationsRepo }) =>
+            reservation = await runInTransaction(
+                ({ roomsRepository: roomsRepo, reservationsRepository: reservationsRepo }) =>
                 createInRepos(body, roomsRepo, reservationsRepo)
             );
+        } else {
+            reservation = await createInRepos(body, roomsRepository, reservationsRepository);
         }
-        return createInRepos(body, roomsRepository, reservationsRepository);
+
+        if (eventBus) {
+            await eventBus.publish('reservation.created', {
+                reservationId: reservation.id,
+                roomId: reservation.roomId,
+                userId: reservation.userId,
+                startTime: reservation.startTime,
+                endTime: reservation.endTime
+            });
+        }
+        return reservation;
     }
 
     async function cancel(id, currentUser) {
@@ -169,7 +184,18 @@ function createReservationsService({
 
         reservation.status = 'CANCELLED';
         reservation.cancelledAt = now().toISOString();
-        return reservationsRepository.save(reservation);
+        const saved = await reservationsRepository.save(reservation);
+
+        if (eventBus) {
+            await eventBus.publish('reservation.cancelled', {
+                reservationId: saved.id,
+                roomId: saved.roomId,
+                userId: saved.userId,
+                cancelledBy: currentUser.id,
+                cancelledByRole: currentUser.role
+            });
+        }
+        return saved;
     }
 
     return { list, getById, create, cancel };

@@ -39,7 +39,7 @@ async function ensureTestDatabase() {
 
 async function resetDatabase() {
     await knex.raw(
-        'TRUNCATE reservations, rooms, buildings, users RESTART IDENTITY CASCADE'
+        'TRUNCATE audit_log, reservations, rooms, buildings, users RESTART IDENTITY CASCADE'
     );
 
     const passwordHash = await bcrypt.hash(PASSWORD, 4);

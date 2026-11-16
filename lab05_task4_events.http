@@ -1,0 +1,76 @@
+@baseUrl = http://localhost:3000
+@contentType = application/json
+
+### Wymaga: docker compose up --build oraz seed:run.
+### Dla czystego audytu przed scenariuszem:
+### docker compose exec db psql -U roomuser -d room_booking -c "TRUNCATE audit_log RESTART IDENTITY;"
+
+### Login USER — właściciel rezerwacji
+# @name loginUser
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "seed.user@example.com",
+  "password": "seed-user-password-xx"
+}
+
+###
+@userToken = {{loginUser.response.body.accessToken}}
+
+### Login ADMIN — anulowanie cudzej rezerwacji
+# @name loginAdmin
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "admin@example.com",
+  "password": "admin-super-secret-password"
+}
+
+###
+@adminToken = {{loginAdmin.response.body.accessToken}}
+
+### 1. Utworzenie rezerwacji → 201 + reservation.created
+# @name createReservation
+POST {{baseUrl}}/api/reservations
+Authorization: Bearer {{userToken}}
+Content-Type: {{contentType}}
+
+{
+  "roomId": 1,
+  "participants": 2,
+  "startTime": "2027-02-01T10:00:00.000Z",
+  "endTime": "2027-02-01T11:00:00.000Z"
+}
+
+###
+@reservationId = {{createReservation.response.body.id}}
+
+### 2. Kolizja → 409 ROOM_ALREADY_BOOKED, bez nowego eventu
+POST {{baseUrl}}/api/reservations
+Authorization: Bearer {{userToken}}
+Content-Type: {{contentType}}
+
+{
+  "roomId": 1,
+  "participants": 2,
+  "startTime": "2027-02-01T10:00:00.000Z",
+  "endTime": "2027-02-01T11:00:00.000Z"
+}
+
+### 3. ADMIN anuluje cudzą rezerwację → 200 + reservation.cancelled
+PATCH {{baseUrl}}/api/reservations/{{reservationId}}/cancel
+Authorization: Bearer {{adminToken}}
+
+### 4. Ponowne anulowanie → 200, bez drugiego eventu
+PATCH {{baseUrl}}/api/reservations/{{reservationId}}/cancel
+Authorization: Bearer {{adminToken}}
+
+### 5. Audit log — najnowsze eventy
+GET {{baseUrl}}/api/admin/audit-log?limit=20
+Authorization: Bearer {{adminToken}}
+
+### 6. Audit log tylko dla anulowań
+GET {{baseUrl}}/api/admin/audit-log?eventType=reservation.cancelled
+Authorization: Bearer {{adminToken}}

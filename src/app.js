@@ -16,6 +16,11 @@ import { createRoomsRouter } from './modules/rooms/rooms.routes.js';
 import { createReservationsService } from './modules/reservations/reservations.service.js';
 import { createReservationsController } from './modules/reservations/reservations.controller.js';
 import { createReservationsRouter } from './modules/reservations/reservations.routes.js';
+import { createAuditLogService } from './modules/audit/audit.service.js';
+import { createAuditLogController } from './modules/audit/audit.controller.js';
+import { createAuditLogRouter } from './modules/audit/audit.routes.js';
+import { createEventBus } from './events/eventBus.js';
+import { authorize } from './middleware/authorize.js';
 
 function createApp({
     authRepository,
@@ -25,7 +30,9 @@ function createApp({
     runInTransaction,
     jwtSecret,
     jwtExpiresIn,
-    now
+    now,
+    eventBus = createEventBus(),
+    auditLogRepository
 }) {
     const authService = createAuthService({ authRepository, jwtSecret, jwtExpiresIn });
     const authenticate = createAuthenticate({ jwtSecret });
@@ -38,6 +45,7 @@ function createApp({
         reservationsRepository,
         roomsRepository,
         runInTransaction,
+        eventBus,
         now
     });
 
@@ -45,6 +53,9 @@ function createApp({
     const buildingsController = createBuildingsController({ buildingsService });
     const roomsController = createRoomsController({ roomsService });
     const reservationsController = createReservationsController({ reservationsService });
+    const auditLogService = auditLogRepository
+        ? createAuditLogService({ auditLogRepository })
+        : null;
 
     const app = express();
 
@@ -61,6 +72,16 @@ function createApp({
         authenticate,
         createReservationsRouter({ reservationsController })
     );
+    if (auditLogService) {
+        app.use(
+            '/api/admin/audit-log',
+            authenticate,
+            authorize('ADMIN'),
+            createAuditLogRouter({
+                auditLogController: createAuditLogController({ auditLogService })
+            })
+        );
+    }
 
     app.use(notFoundHandler);
     app.use(errorHandler);
