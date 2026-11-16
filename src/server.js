@@ -15,9 +15,10 @@ let buildingsRepository;
 let roomsRepository;
 let reservationsRepository;
 let runInTransaction;
+let knex;
 
 if (config.storage === 'knex') {
-    const knex = createKnex();
+    knex = createKnex();
     authRepository = createAuthRepositoryKnex(knex);
     buildingsRepository = createBuildingsRepositoryKnex(knex);
     roomsRepository = createRoomsRepositoryKnex(knex);
@@ -49,8 +50,7 @@ const app = createApp({
     jwtExpiresIn: config.jwtExpiresIn
 });
 
-// Express 5: callback dostaje też błąd listen (np. EADDRINUSE)
-app.listen(config.port, (err) => {
+const server = app.listen(config.port, (err) => {
     if (err) {
         console.error(err);
         process.exit(1);
@@ -59,3 +59,34 @@ app.listen(config.port, (err) => {
         `Server running on http://localhost:${config.port} (storage=${config.storage})...`
     );
 });
+
+let shuttingDown = false;
+
+async function shutdown(signal) {
+    if (shuttingDown) {
+        return;
+    }
+    shuttingDown = true;
+    console.log(`Received ${signal}, shutting down...`);
+
+    server.close(async (serverError) => {
+        try {
+            if (knex) {
+                await knex.destroy();
+                console.log('Database pool closed.');
+            }
+            if (serverError) {
+                console.error(serverError);
+                process.exitCode = 1;
+            } else {
+                console.log('Graceful shutdown complete.');
+            }
+        } catch (error) {
+            console.error('Graceful shutdown failed.', error);
+            process.exitCode = 1;
+        }
+    });
+}
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
