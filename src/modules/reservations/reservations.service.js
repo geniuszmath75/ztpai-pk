@@ -15,7 +15,7 @@ const ALLOWED_TRANSITIONS = {
 
 function overlaps(aStart, aEnd, bStart, bEnd) {
     // półotwarte przedziały [start, end)
-    return aStart <= bEnd && bStart < aEnd;
+    return aStart < bEnd && bStart < aEnd;
 }
 
 function canAccessReservation(reservation, currentUser) {
